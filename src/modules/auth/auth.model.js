@@ -49,6 +49,19 @@ const userSchema = new mongoose.Schema({
         type : String,
         default : null
     },
+    googleId: { 
+        type: String, 
+        default: null 
+    },
+    isVerified: { 
+        type: Boolean, 
+        default: false 
+    },
+    role: {
+        type: String,
+        enum: ['user', 'manager', 'admin'],
+        default: 'user'
+    }
 },{
     timestamps : true,
     versionKey : false

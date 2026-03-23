@@ -1,12 +1,28 @@
 const { v4: uuidv4 } = require('uuid');
 const { success,error } = require('../../utils/response');
 const msg = require('../../config/constant');
-const { generateAccessToken, 
+const { 
+    generateAccessToken, 
     generateRefreshToken, 
-    verifyRefreshToken} = require('../../utils/generateToken');
+    verifyRefreshToken
+} = require('../../utils/generateToken');
 const asyncHandler = require('../../utils/asyncHandler');
 const repo = require('./auth.repository');
-const { setRefreshToken, getLoginAttempts, setLoginAttempts, deleteLoginAttempts, getRefreshToken, blacklistToken, deleteRefreshToken } = require('../../utils/redisHelper');
+const { 
+    setRefreshToken, 
+    getLoginAttempts, 
+    setLoginAttempts, 
+    deleteLoginAttempts, 
+    getRefreshToken, 
+    blacklistToken, 
+    deleteRefreshToken 
+} = require('../../utils/redisHelper');
+const passport = require('passport');
+const { 
+    AUDIT_ACTIONS, 
+    AUDIT_MODULES, 
+    auditLog 
+} = require('../../utils/auditLogger')
 
 const MAX_LOGIN_ATTEMPTS = 5;
 
@@ -26,6 +42,13 @@ exports.register = asyncHandler(async (req, res) => {
     const refreshToken = generateRefreshToken(user._id);
 
     await setRefreshToken(user._id, refreshToken);
+
+    await auditLog(
+        req,
+        AUDIT_ACTIONS.REGISTER,
+        AUDIT_MODULES.AUTH,
+        `New user registered: ${user.email}`
+    );
 
     return success(
         res, {
@@ -63,6 +86,15 @@ exports.login = asyncHandler(async (req, res) => {
 
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
+    await setRefreshToken(user._id, refreshToken);
+
+    await auditLog(
+        req,
+        AUDIT_ACTIONS.LOGIN,
+        AUDIT_MODULES.AUTH,
+        `User logged in: ${user.email}`
+    );
+
     return success(
         res,
         {
@@ -92,8 +124,14 @@ exports.refreshToken = asyncHandler(async (req, res) => {
 
 exports.logout = asyncHandler(async (req, res) => {
     await blacklistToken(req.token, 15*60);
-
     await deleteRefreshToken(req.user._id);
+
+    await auditLog(
+        req,
+        AUDIT_ACTIONS.LOGOUT,
+        AUDIT_MODULES.AUTH,
+        `User logged out: ${req.user.email}`
+    );
 
     return success(res, { message: msg.LOGOUT_SUCCESS });
 });
@@ -118,3 +156,29 @@ exports.regenerateApiKey = asyncHandler(async (req,res) => {
 
     return success(res, {apiKey: user.apiKey})
 });
+
+exports.googleAuth = passport.authenticate('google', {
+    scope:   ['profile', 'email'],
+    session: false,
+});
+
+exports.googleCallback = asyncHandler(async (req, res, next) => {
+    passport.authenticate(
+        'google', 
+        { 
+            session: false
+        },
+        async(err, user) => {
+            if (err || !user) {
+                return next(error(res, msg.GOOGLE_AUTH_FAILED, msg.UNAUTHORIZED_CODE));
+            }
+
+            const accessToken  = generateAccessToken(user._id);
+            const refreshToken = generateRefreshToken(user._id);
+
+            await setRefreshToken(user._id, refreshToken);
+
+            return success(res, { accessToken, refreshToken, plan: user.plan });
+        }
+    )(req, res, next)
+})

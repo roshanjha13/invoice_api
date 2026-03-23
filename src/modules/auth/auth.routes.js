@@ -19,7 +19,9 @@ const {
     getApiKey,
     regenerateApiKey,
     refreshToken,
-    logout
+    logout,
+    googleAuth,
+    googleCallback
 } = require('./auth.controller');
 
 router.post('/register', authLimiter, validate(registerValidation), register)
@@ -28,5 +30,7 @@ router.post('/refresh-token', validate(refreshTokenValidation) , refreshToken);
 router.post('/logout', protect, logout);
 router.get('/api-key', protect, getApiKey)
 router.post('/api-key/regenerate', protect, apiKeyRegenerateLimiter, regenerateApiKey)
+router.get('/google', protect, googleAuth)
+router.get('/google/callback', protect, googleCallback)
 
 module.exports = router;

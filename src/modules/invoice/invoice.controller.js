@@ -6,16 +6,52 @@ const userRepo = require('../auth/auth.repository');
 const { generateInvoicePDF } = require('../../utils/pdfGenerator');
 const { addEmailJob } = require('../../queues/jobs/email.jobs');
 const { addWebhookJob } = require('../../queues/jobs/webhook.job');
+const { calculateInvoiceGST } =  require('../../utils/gstCalculator');
+const {
+    auditLog,
+    AUDIT_ACTIONS,
+    AUDIT_MODULES
+} = require('../../utils/auditLogger')
 
 exports.createInvoice = asyncHandler(async (req, res, next) => {
-    const invoice = await respo.createInvoice({
-        ...req.body,
-        userId: req.user._id
+    const {
+        sellerState,
+        clientState,
+        items,
+        discount,
+        ...rest
+    } = req.body
+
+    const gst = calculateInvoiceGST(items, sellerState, clientState);
+ 
+    const invoice = await repo.createInvoice({
+        ...rest,
+        items:        gst.items,
+        userId:       req.user._id,
+        sellerState,
+        clientState,
+        subtotal:     gst.subtotal,
+        discount:     discount || 0,
+        gstBreakdown: {
+            totalCGST:  gst.totalCGST,
+            totalSGST:  gst.totalSGST,
+            totalIGST:  gst.totalIGST,
+            totalGST:   gst.totalGST,
+            interState: gst.interState,
+        },
     });
 
     await userRepo.incrementInvoiceCount(req.user._id);
 
-    return success(req, { invoice }, msg.CREATED);
+    await auditLog(
+        req,
+        AUDIT_ACTIONS.CREATE_INVOICE,
+        AUDIT_MODULES.INVOICE,
+        `Invoice created: ${invoice.invoiceNo}`,
+        { invoiceId: invoice._id }
+    );
+
+    return success(res, { invoice }, msg.CREATED);
 })
 
 exports.getInvoices = asyncHandler(async (req, res, next) => {
@@ -82,6 +118,15 @@ exports.deleteInvoice = asyncHandler(async (req, res, next) => {
     }
 
     await repo.deleteById(req.params.id, req.user._id);
+
+    await auditLog(
+        req,
+        AUDIT_ACTIONS.DELETE_INVOICE,
+        AUDIT_MODULES.INVOICE,
+        `Invoice deleted: ${invoice.invoiceNo}`,
+        { invoiceId: req.params.id }
+    );
+
     
     return success(res, { message: msg.INVOICE_DELETED});
 })
@@ -106,7 +151,15 @@ exports.markPaid = asyncHandler(async (req, res, next) => {
         }
     );
     
-    return success(res, { invoide: updated});
+    await auditLog(
+        req,
+        AUDIT_ACTIONS.MARK_PAID,
+        AUDIT_MODULES.INVOICE,
+        `Invoice marked as paid: ${updated.invoiceNo}`,
+        { invoiceId: req.params.id }
+    );
+
+    return success(res, { invoide: updated });
 })
 
 exports.generatePDF = asyncHandler(async (req, res, next) => {
@@ -140,6 +193,14 @@ exports.sendInvoice = asyncHandler(async (req, res, next) => {
     if(req.user.webhookUrl) {
         await addWebhookJob('invoice.sent', invoice, req.user.webhookUrl);
     }
+
+    await auditLog(
+        req,
+        AUDIT_ACTIONS.SEND_INVOICE,
+        AUDIT_MODULES.INVOICE,
+        `Invoice sent: ${invoice.invoiceNo}`,
+        { invoiceId: req.params.id }
+    );
 
     return success(res, { message: msg.INVOICE_SENT });
 })

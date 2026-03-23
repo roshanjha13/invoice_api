@@ -43,16 +43,21 @@ module.exports = {
   INVOICE_ALREADY_PAID:              'Invoice is already marked as paid',
   INVOICE_DELETED:                   'Invoice deleted successfully',
   INVOICE_SENT:                      'Invoice queued for sending successfully',
+  GOOGLE_AUTH_FAILED:                'Google authentication failed. Please try again.',
+  FORBIDDEN:                         'You do not have permission to perform this action',
+  USER_NOT_FOUND:                    'User not found',
+  USER_ACTIVATED:                    'User activated successfully',
+  USER_BANNED:                       'User banned successfully',
+  PLAN_UPDATED:                      'Plan updated successfully',
+ 
   //status code
-  OK:                 200,
-  CREATED:            201,
-  BAD_REQUEST:        400,
-  UNAUTHORIZED_CODE:  401,
-  FORBIDDEN:          403,
-  NOT_FOUND:          404,
-  CONFLICT:           409,
-  SERVER_ERROR:       500,
-  TOO_MANY_REQUESTS:  429,
-
-
+  OK:                      200,
+  CREATED:                 201,
+  BAD_REQUEST:             400,
+  UNAUTHORIZED_CODE:       401,
+  FORBIDDEN_CODE:          403,
+  NOT_FOUND_CODE:               404,
+  CONFLICT:                409,
+  SERVER_ERROR:            500,
+  TOO_MANY_REQUESTS:       429,
 };

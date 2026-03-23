@@ -6,6 +6,7 @@ const itemValidation = Joi.object({
     'string.base':  msg.ITEM_DESC_REQUIRED,
     'any.required': msg.ITEM_DESC_REQUIRED
   }),
+  hsnCode:  Joi.string().optional(),
   quantity: Joi.number().min(1).required().messages({
     'number.base':  msg.ITEM_QTY_REQUIRED,
     'any.required': msg.ITEM_QTY_REQUIRED
@@ -30,8 +31,14 @@ exports.createInvoiceValidation = Joi.object({
     'any.required': msg.CLIENT_EMAIL_REQUIRED
   }),
   clientAddress: Joi.string().optional(),
+  clientState:   Joi.string().required().messages({
+    'any.required': 'Client state is required'
+  }),
   businessName:  Joi.string().optional(),
   businessEmail: Joi.string().email().optional(),
+  sellerState:   Joi.string().required().messages({
+    'any.required': 'Seller state is required'
+  }),
   currency: Joi.string().valid('INR', 'USD', 'EUR', 'GBP').default('INR').messages({
     'any.only': msg.CURRENCY_INVALID
   }),
@@ -39,7 +46,6 @@ exports.createInvoiceValidation = Joi.object({
     'array.min':    msg.ITEMS_REQUIRED,
     'any.required': msg.ITEMS_REQUIRED
   }),
-  tax:      Joi.number().min(0).default(0),
   discount: Joi.number().min(0).default(0),
   dueDate:  Joi.date().greater('now').optional(),
   notes:    Joi.string().max(500).optional(),
@@ -49,11 +55,12 @@ exports.updateInvoiceValidation = Joi.object({
   clientName:    Joi.string().optional(),
   clientEmail:   Joi.string().email().optional(),
   clientAddress: Joi.string().optional(),
+  clientState:   Joi.string().optional(),
   businessName:  Joi.string().optional(),
   businessEmail: Joi.string().email().optional(),
+  sellerState:   Joi.string().optional(),
   currency:      Joi.string().valid('INR', 'USD', 'EUR', 'GBP').optional(),
   items:         Joi.array().items(itemValidation).min(1).optional(),
-  tax:           Joi.number().min(0).optional(),
   discount:      Joi.number().min(0).optional(),
   dueDate:       Joi.date().optional(),
   notes:         Joi.string().max(500).optional(),

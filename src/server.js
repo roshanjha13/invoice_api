@@ -11,10 +11,15 @@ const helmetConfig = require('./config/helmet');
 const connectDB = require('./config/db');
 const routes = require('./routes/index')
 const errorHandler = require('./middlewares/errorHandler');
-const { globalLimiter } = require('./middlewares/rateLimiter');
-const validateEnv = require('./config/env');
 const xssSanitizer = require('./config/sanitize');
+const validateEnv = require('./config/env');
+const passport = require('passport');
+require('./config/passport');
+const { globalLimiter } = require('./middlewares/rateLimiter');
 const { connectRedis } = require('../src/config/redis');
+const { promClient } = require('./config/prometheus');
+const metricsMiddleware = require('./middlewares/metrics');
+
 require('dotenv').config();
 
 const app = express();
@@ -30,8 +35,10 @@ app.use(hpp());
 app.use(morgan('dev'));
 app.use(express.json({ extended: true, limit: '10kb'}));
 app.use(express.urlencoded({ extended: true, limit: '10kb'}));
+app.use(passport.initialize())
 
 app.use(globalLimiter);
+app.use(metricsMiddleware);
 
 app.use('/api/v1',routes);
 
@@ -45,6 +52,11 @@ app.get('/health',(req,res)=>{
         message : 'InvoiceAPI is running' 
     })
 })
+
+app.get('/metrics', async (req, res) => {
+  res.setHeader('Content-Type', promClient.register.contentType);
+  res.send(await promClient.register.metrics());
+});
 
 app.use(errorHandler);
 
