@@ -5,12 +5,23 @@
   "scripts": {
     "start": "node src/cluster.js",
     "dev": "nodemon src/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "cross-env NODE_ENV=test jest --coverage --forceExit --detectOpenHandles"
   },
   "keywords": [],
-  "author": "",
+  "author": "Roshan Kumar Jha",
   "license": "ISC",
-  "description": "",
+  "description": "Production-ready SaaS Invoice Generation API",
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ],
+    "forceExit": true,
+    "clearMocks": true,
+    "setupFiles": [
+      "<rootDir>/tests/setup.js"
+    ]
+  },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "bullmq": "^5.71.0",
@@ -40,5 +51,11 @@
     "uuid": "^13.0.0",
     "winston": "^3.19.0",
     "xss": "^1.0.15"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "jest": "^30.3.0",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2"
   }
 }
