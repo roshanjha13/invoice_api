@@ -13,6 +13,9 @@ const {
     AUDIT_MODULES
 } = require('../../utils/auditLogger')
 
+const { uploadPDFToCloudinary } = require('../../utils/cloudinaryService');
+const logger = require('../../utils/logger');
+
 exports.createInvoice = asyncHandler(async (req, res, next) => {
     const {
         sellerState,
@@ -172,7 +175,13 @@ exports.generatePDF = asyncHandler(async (req, res, next) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=${invoice.invoiceNo}.pdf`);
 
-    await generateInvoicePDF(invoice, res);
+    const pdfStream = await generateInvoicePDF(invoice, res);
+    
+    if(!invoice.pdfUrl){
+        uploadPDFToCloudinary(pdfStream, invoice.invoiceNo)
+            .then(url => repo.updateById(invoice._id, invoice.userId, { pdfUrl: url }))
+            .catch(err => logger.error(`PDF upload failed: ${err.message}`))
+    }
 })
 
 exports.sendInvoice = asyncHandler(async (req, res, next) => {

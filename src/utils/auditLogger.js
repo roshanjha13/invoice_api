@@ -37,12 +37,17 @@ const AUDIT_ACTIONS = {
   // Admin
   BAN_USER:           'BAN_USER',
   CHANGE_PLAN:        'CHANGE_PLAN',
+
+  CREATE_PAYMENT:     'CREATE_PAYMENT',
+  VERIFY_PAYMENT:     'VERIFY_PAYMENT',
+  REFUND_PAYMENT:     'REFUND_PAYMENT',
 }
 
 const AUDIT_MODULES = {
   AUTH:    'AUTH',
   INVOICE: 'INVOICE',
   ADMIN:   'ADMIN',
+  PAYMENT: 'PAYMENT',
 };
 
 module.exports = {

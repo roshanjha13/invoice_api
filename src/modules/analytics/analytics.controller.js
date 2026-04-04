@@ -51,3 +51,22 @@ exports.exportGSTCSV = asyncHandler(async (req, res) => {
   res.setHeader('Content-Disposition', 'attachment; filename=gst-report.csv');
   res.send(csv);
 });
+
+// Payment Stats
+exports.getPaymentStats = asyncHandler(async (req, res) => {
+  const stats = await repo.getPaymentStats(req.user._id);
+  return success(res, { stats });
+});
+
+// Monthly Payment Revenue
+exports.getMonthlyPaymentRevenue = asyncHandler(async (req, res) => {
+  const year = req.query.year || new Date().getFullYear();
+  const data = await repo.getMonthlyPaymentRevenue(req.user._id, year);
+  return success(res, { data, year });
+});
+
+// Payment Status Wise
+exports.getPaymentStatusWise = asyncHandler(async (req, res) => {
+  const data = await repo.getPaymentStatusWise(req.user._id);
+  return success(res, { data });
+});

@@ -1,5 +1,7 @@
 const { Worker } = require('bullmq');
 const { generateInvoicePDF } = require('../../utils/pdfGenerator');
+const { uploadPDFToCloudinary } = require('../../utils/cloudinaryService');
+const repo = require('../../modules/invoice/invoice.repository');
 const logger = require('../../utils/logger');
 
 const connection = {
@@ -13,10 +15,14 @@ const pdfWorker = new Worker('pdf', async (job) => {
   logger.info(`Processing PDF job: ${job.id} for ${invoice.invoiceNo}`);
 
   const pdfStream = await generateInvoicePDF(invoice);
+  
+  const pdfUrl = await uploadPDFToCloudinary(pdfStream, invoice.invoiceNo);
+
+  await repo.updateById(invoice._id, invoice.userId, { pdfUrl });
 
   logger.info(`PDF generated successfully: ${invoice.invoiceNo}`);
 
-  return { invoiceNo: invoice.invoiceNo };
+  return { invoiceNo: invoice.invoiceNo, pdfUrl };
 }, { connection });
 
 pdfWorker.on('completed', (job) => {

@@ -50,6 +50,14 @@ module.exports = {
   USER_BANNED:                       'User banned successfully',
   PLAN_UPDATED:                      'Plan updated successfully',
  
+  PAYMENT_SUCCESS:                   'Payment verified successfully',
+  PAYMENT_NOT_FOUND:                 'Payment not found',
+  PAYMENT_INVALID_SIGNATURE:         'Invalid payment signature',
+  PAYMENT_NOT_REFUNDABLE:            'Only paid payments can be refunded',
+  WEBHOOK_INVALID_SIGNATURE:         'Invalid webhook signature',
+  REFUND_SUCCESS:                    'Refund initiated successfully',
+
+
   //status code
   OK:                      200,
   CREATED:                 201,
@@ -60,4 +68,6 @@ module.exports = {
   CONFLICT:                409,
   SERVER_ERROR:            500,
   TOO_MANY_REQUESTS:       429,
+
+  
 };

@@ -7,6 +7,6 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-logger.info('✅ Cloudinary initialized');
+logger.info('Cloudinary initialized');
 
 module.exports = cloudinary;

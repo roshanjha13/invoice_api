@@ -1,5 +1,5 @@
 const Invoice = require('../invoice/invoice.model');
-
+const Payment = require('../payment/payment.model');
 exports.getInvoiceStats = async (userId) => {
     const stats = await Invoice.aggregate([
         {
@@ -177,4 +177,60 @@ exports.getGSTSummary = async (userId) => {
 exports.findAllInvoicesForExport = async (userId, filter = {}) => {
   return Invoice.find({ userId, ...filter })
     .sort({ createdAt: -1 });
+};
+
+// Payment stats
+exports.getPaymentStats = async (userId) => {
+  const stats = await Payment.aggregate([
+    { $match: { userId } },
+    {
+      $group: {
+        _id:            null,
+        totalPayments:  { $sum: 1 },
+        totalRevenue:   { $sum: { $cond: [{ $eq: ['$status', 'paid'] }, '$amount', 0] } },
+        totalRefunds:   { $sum: '$refundAmount' },
+        failedPayments: { $sum: { $cond: [{ $eq: ['$status', 'failed'] }, 1, 0] } },
+        paidPayments:   { $sum: { $cond: [{ $eq: ['$status', 'paid'] }, 1, 0] } },
+      }
+    }
+  ]);
+  return stats[0] || {};
+};
+
+// Monthly payment revenue
+exports.getMonthlyPaymentRevenue = async (userId, year) => {
+  return Payment.aggregate([
+    {
+      $match: {
+        userId,
+        status: 'paid',
+        createdAt: {
+          $gte: new Date(`${year}-01-01`),
+          $lte: new Date(`${year}-12-31`),
+        }
+      }
+    },
+    {
+      $group: {
+        _id:     { $month: '$createdAt' },
+        revenue: { $sum: '$amount' },
+        count:   { $sum: 1 }
+      }
+    },
+    { $sort: { _id: 1 } }
+  ]);
+};
+
+// Payment status wise
+exports.getPaymentStatusWise = async (userId) => {
+  return Payment.aggregate([
+    { $match: { userId } },
+    {
+      $group: {
+        _id:    '$status',
+        count:  { $sum: 1 },
+        amount: { $sum: '$amount' }
+      }
+    }
+  ]);
 };

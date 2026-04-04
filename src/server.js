@@ -15,6 +15,7 @@ const xssSanitizer = require('./config/sanitize');
 const validateEnv = require('./config/env');
 const passport = require('passport');
 require('./config/passport');
+require('./config/cloudinary');
 const { globalLimiter } = require('./middlewares/rateLimiter');
 const { connectRedis } = require('../src/config/redis');
 const { promClient } = require('./config/prometheus');

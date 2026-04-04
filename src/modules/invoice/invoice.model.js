@@ -53,6 +53,10 @@ const invoiceSchema = new mongoose.Schema({
   pdfUrl:  { type: String },
   paidAt:  { type: Date },
 
+
+  paymentId:     { type: String, ref: 'Payment', default: null },
+  paymentLink:   { type: String, default: null },
+
 }, { timestamps: true });
 
 // Indexes

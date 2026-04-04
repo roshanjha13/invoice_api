@@ -46,3 +46,11 @@ exports.findAllByUser = async (userId, filter = {}, options = {}) => {
 
     return { invoices, total, page: Number(page), limit: Number(limit) };    
 }
+
+exports.updatePaymentLink = async (id, userId, paymentId, paymentLink) => {
+  return Invoice.findOneAndUpdate(
+    { _id: id, userId },
+    { paymentId, paymentLink },
+    { new: true }
+  );
+};

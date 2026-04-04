@@ -8,7 +8,10 @@ const {
     getTopClients, 
     getGSTSummary,
     exportGSTCSV,
-    exportInvoicesCSV
+    exportInvoicesCSV,
+    getPaymentStatusWise,
+    getMonthlyPaymentRevenue,
+    getPaymentStats
 } = require('./analytics.controller');
 
 const { protect } = require('../../middlewares/auth.middleware');
@@ -24,5 +27,8 @@ router.get('/gst-summary',          getGSTSummary);
 router.get('/export/invoices',      exportInvoicesCSV);
 router.get('/export/gst',           exportGSTCSV);
 
+router.get('/payment-stats',        getPaymentStats);
+router.get('/payment-monthly',      getMonthlyPaymentRevenue);
+router.get('/payment-status',       getPaymentStatusWise);
 
 module.exports = router
