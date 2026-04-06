@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const razorpay = require('../../config/razorpay');
+const { createOrder, refundPayment } = require('../../config/razorpay');
 const asyncHandler = require('../../utils/asyncHandler');
 const { success, error } = require('../../utils/response');
 const HTTP = require('../../utils/httpStatus');
@@ -14,7 +14,6 @@ const logger = require('../../utils/logger');
 exports.createPaymentOrder = asyncHandler(async (req, res, next) => {
   const { invoiceId } = req.body;
 
-  // Invoice check karo
   const invoice = await invoiceRepo.findById(invoiceId, req.user._id);
   if (!invoice) return next(error(res, msg.INVOICE_NOT_FOUND, HTTP.NOT_FOUND));
 
@@ -22,9 +21,9 @@ exports.createPaymentOrder = asyncHandler(async (req, res, next) => {
     return next(error(res, msg.INVOICE_ALREADY_PAID, HTTP.BAD_REQUEST));
   }
 
-  // Razorpay order banao
-  const order = await razorpay.orders.create({
-    amount:   Math.round(invoice.total * 100), // paise mein
+  // ✅ Circuit breaker ke through
+  const order = await createOrder({
+    amount:   Math.round(invoice.total * 100),
     currency: invoice.currency || 'INR',
     receipt:  invoice.invoiceNo,
     notes: {
@@ -34,7 +33,6 @@ exports.createPaymentOrder = asyncHandler(async (req, res, next) => {
     }
   });
 
-  // Payment record banao
   const payment = await repo.createPayment({
     invoiceId:       invoice._id,
     userId:          req.user._id,
@@ -52,8 +50,6 @@ exports.createPaymentOrder = asyncHandler(async (req, res, next) => {
     `https://razorpay.com/payment/${order.id}`
   );
 
-
-  // Audit log
   await auditLog(
     req,
     AUDIT_ACTIONS.CREATE_PAYMENT,
@@ -75,7 +71,6 @@ exports.createPaymentOrder = asyncHandler(async (req, res, next) => {
 exports.verifyPayment = asyncHandler(async (req, res, next) => {
   const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
 
-  // Signature verify karo
   const body = razorpayOrderId + '|' + razorpayPaymentId;
   const expectedSignature = crypto
     .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
@@ -90,7 +85,6 @@ exports.verifyPayment = asyncHandler(async (req, res, next) => {
     return next(error(res, msg.PAYMENT_INVALID_SIGNATURE, HTTP.BAD_REQUEST));
   }
 
-  // Payment update karo
   const payment = await repo.updateByOrderId(razorpayOrderId, {
     razorpayPaymentId,
     razorpaySignature,
@@ -98,7 +92,6 @@ exports.verifyPayment = asyncHandler(async (req, res, next) => {
     paidAt: new Date(),
   });
 
-  // Invoice mark paid karo
   await invoiceRepo.updateStatus(
     payment.invoiceId,
     payment.userId,
@@ -106,11 +99,9 @@ exports.verifyPayment = asyncHandler(async (req, res, next) => {
     { paidAt: new Date() }
   );
 
-  // Email bhejo
   const invoice = await invoiceRepo.findById(payment.invoiceId, payment.userId);
   if (invoice) await addEmailJob(invoice);
 
-  // Audit log
   await auditLog(
     req,
     AUDIT_ACTIONS.VERIFY_PAYMENT,
@@ -130,7 +121,6 @@ exports.handleWebhook = asyncHandler(async (req, res, next) => {
   const signature = req.headers['x-razorpay-signature'];
   const body = JSON.stringify(req.body);
 
-  // Webhook signature verify karo
   const expectedSignature = crypto
     .createHmac('sha256', process.env.RAZORPAY_WEBHOOK_SECRET)
     .update(body)
@@ -208,13 +198,12 @@ exports.refundPayment = asyncHandler(async (req, res, next) => {
     return next(error(res, msg.PAYMENT_NOT_REFUNDABLE, HTTP.BAD_REQUEST));
   }
 
-  // Razorpay refund
-  const refund = await razorpay.payments.refund(payment.razorpayPaymentId, {
+  // ✅ Circuit breaker ke through
+  const refund = await refundPayment(payment.razorpayPaymentId, {
     amount: amount ? Math.round(amount * 100) : Math.round(payment.amount * 100),
     notes:  { reason },
   });
 
-  // Payment update karo
   await repo.updatePaymentStatus(payment._id, {
     status:       'refunded',
     refundId:     refund.id,
@@ -223,7 +212,6 @@ exports.refundPayment = asyncHandler(async (req, res, next) => {
     refundedAt:   new Date(),
   });
 
-  // Audit log
   await auditLog(
     req,
     AUDIT_ACTIONS.REFUND_PAYMENT,
