@@ -61,7 +61,15 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['user', 'manager', 'admin'],
         default: 'user'
-    }
+    },
+    trialUsed: { 
+        type: Boolean, 
+        default: false 
+    },
+    trialEndAt: { 
+        type: Date, 
+        default: null 
+    },
 },{
     timestamps : true,
     versionKey : false

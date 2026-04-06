@@ -33,3 +33,15 @@ exports.findByApiKey = async (apiKey) => {
 exports.incrementInvoiceCount = async (id) => {
     return User.findByIdAndUpdate(id, { $inc: {invoiceCount: 1} });
 }
+
+exports.updateTrialInfo = async (id, trialEndAt) => {
+  return User.findByIdAndUpdate(
+    id,
+    { trialUsed: true, trialEndAt, plan: 'starter' },
+    { new: true }
+  );
+};
+
+exports.updateUserPlan = async (id, plan) => {
+  return User.findByIdAndUpdate(id, { plan }, { new: true });
+};

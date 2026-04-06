@@ -56,8 +56,11 @@ module.exports = {
   PAYMENT_NOT_REFUNDABLE:            'Only paid payments can be refunded',
   WEBHOOK_INVALID_SIGNATURE:         'Invalid webhook signature',
   REFUND_SUCCESS:                    'Refund initiated successfully',
-
-
+  CREATE_SUBSCRIPTION:               'Subscription created successfully',
+  CANCEL_SUBSCRIPTION:               'Subscription cancelled successfully',
+  TRIAL_ALREADY_USED:                'Trial has already been used',
+  TRIAL_STARTED:                     'Trial started successfully',
+  CANCEL_SUBSCRIPTION:               'Subscription cancelled successfully',
   //status code
   OK:                      200,
   CREATED:                 201,

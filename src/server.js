@@ -4,6 +4,7 @@ const swaggerUi = require('swagger-ui-express');
 const mongoSanitize = require('express-mongo-sanitize');
 const compression = require('compression');
 const hpp = require('hpp');
+const passport = require('passport');
 
 const swaggerSpec = require('./config/swagger');
 const corsConfig = require('./config/cors');
@@ -13,13 +14,19 @@ const routes = require('./routes/index')
 const errorHandler = require('./middlewares/errorHandler');
 const xssSanitizer = require('./config/sanitize');
 const validateEnv = require('./config/env');
-const passport = require('passport');
+const metricsMiddleware = require('./middlewares/metrics');
 require('./config/passport');
 require('./config/cloudinary');
 const { globalLimiter } = require('./middlewares/rateLimiter');
 const { connectRedis } = require('../src/config/redis');
 const { promClient } = require('./config/prometheus');
-const metricsMiddleware = require('./middlewares/metrics');
+const { startInvoiceResetJob, startTrialExpiryJob } = require('./jobs/invoiceReset.job');
+const { 
+    emailBreaker, 
+    cloudinaryBreaker, 
+    razorpayBreaker, 
+    webhookBreaker 
+} = require('./utils/circuitBreaker');
 
 require('dotenv').config();
 
@@ -61,9 +68,23 @@ app.get('/metrics', async (req, res) => {
 
 app.use(errorHandler);
 
-require('./queues/workers/email.worker')
-require('./queues/workers/pdf.worker')
-require('./queues/workers/webhook.worker')
+require('./queues/workers/email.worker');
+require('./queues/workers/pdf.worker');
+require('./queues/workers/webhook.worker');
+
+startInvoiceResetJob();
+startTrialExpiryJob();
+
+
+// Circuit breaker stats
+app.get('/circuit-breakers', (req, res) => {
+  res.json({
+    email:      emailBreaker.getStats(),
+    cloudinary: cloudinaryBreaker.getStats(),
+    razorpay:   razorpayBreaker.getStats(),
+    webhook:    webhookBreaker.getStats(),
+  });
+});
 
 connectDB()
     .then(async ()=>{
