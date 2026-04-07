@@ -15,8 +15,10 @@ const errorHandler = require('./middlewares/errorHandler');
 const xssSanitizer = require('./config/sanitize');
 const validateEnv = require('./config/env');
 const metricsMiddleware = require('./middlewares/metrics');
+const requestTimeout = require('./middlewares/requestTimeout');
 require('./config/passport');
 require('./config/cloudinary');
+
 const { globalLimiter } = require('./middlewares/rateLimiter');
 const { connectRedis } = require('../src/config/redis');
 const { promClient } = require('./config/prometheus');
@@ -27,6 +29,7 @@ const {
     razorpayBreaker, 
     webhookBreaker 
 } = require('./utils/circuitBreaker');
+const { gracefulShutdown } = require('./utils/gracefulShutdown');
 
 require('dotenv').config();
 
@@ -44,9 +47,9 @@ app.use(morgan('dev'));
 app.use(express.json({ extended: true, limit: '10kb'}));
 app.use(express.urlencoded({ extended: true, limit: '10kb'}));
 app.use(passport.initialize())
-
 app.use(globalLimiter);
 app.use(metricsMiddleware);
+app.use(requestTimeout(30000))
 
 app.use('/api/v1',routes);
 
@@ -66,16 +69,6 @@ app.get('/metrics', async (req, res) => {
   res.send(await promClient.register.metrics());
 });
 
-app.use(errorHandler);
-
-require('./queues/workers/email.worker');
-require('./queues/workers/pdf.worker');
-require('./queues/workers/webhook.worker');
-
-startInvoiceResetJob();
-startTrialExpiryJob();
-
-
 // Circuit breaker stats
 app.get('/circuit-breakers', (req, res) => {
   res.json({
@@ -86,12 +79,24 @@ app.get('/circuit-breakers', (req, res) => {
   });
 });
 
+app.use(errorHandler);
+
+require('./queues/workers/email.worker');
+require('./queues/workers/pdf.worker');
+require('./queues/workers/webhook.worker');
+
+startInvoiceResetJob();
+startTrialExpiryJob();
+
 connectDB()
     .then(async ()=>{
         await connectRedis()
         app.listen(process.env.PORT || 3000, () => {
             console.log(`Server is running on Port ${process.env.PORT || 3000}`);
         });
+
+        gracefulShutdown(server, { timeout: 30000 });
+
     })
 
 
