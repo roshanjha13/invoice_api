@@ -1,5 +1,6 @@
 const { Worker } = require('bullmq');
 const { webhookBreaker } = require('../../utils/circuitBreaker');
+const { withRetry } = require('../../utils/retryHandler');
 const logger = require('../../utils/logger');
 const http  = require('http');
 const https = require('https');
@@ -7,6 +8,35 @@ const https = require('https');
 const connection = {
   host: process.env.REDIS_HOST || 'localhost',
   port: process.env.REDIS_PORT || 6379,
+};
+
+const sendWebhook = (payload, webhookUrl, event) => {
+  return new Promise((resolve, reject) => {
+    const url = new URL(webhookUrl);
+    const options = {
+      hostname: url.hostname,
+      path:     url.pathname,
+      method:   'POST',
+      headers: {
+        'Content-Type':       'application/json',
+        'Content-Length':     Buffer.byteLength(payload),
+        'X-InvoiceAPI-Event': event,
+      }
+    };
+
+    const lib = url.protocol === 'https:' ? https : http;
+    const req = lib.request(options, (res) => {
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        resolve();
+      } else {
+        reject(new Error(`Webhook failed: ${res.statusCode}`));
+      }
+    });
+
+    req.on('error', reject);
+    req.write(payload);
+    req.end();
+  });
 };
 
 const webhookWorker = new Worker('WebHook', async (job) => {
@@ -19,35 +49,18 @@ const webhookWorker = new Worker('WebHook', async (job) => {
     data
   });
 
-  await webhookBreaker.fire(async () => {
-    await new Promise((resolve, reject) => {
-      const url = new URL(webhookUrl);
-
-      const options = {
-        hostname: url.hostname,
-        path:     url.pathname,
-        method:   'POST',
-        headers: {
-          'Content-Type':       'application/json',
-          'Content-Length':     Buffer.byteLength(payload),
-          'X-InvoiceAPI-Event': event,
-        }
-      };
-
-      const lib = url.protocol === 'https:' ? https : http;
-      const req = lib.request(options, (res) => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          resolve();
-        } else {
-          reject(new Error(`Webhook failed: ${res.statusCode}`));
-        }
-      });
-
-      req.on('error', reject);
-      req.write(payload);
-      req.end();
-    });
-  });
+  await withRetry(
+    () => webhookBreaker.fire(() => sendWebhook(payload, webhookUrl, event)),
+    {
+      retries:    5,
+      delay:      2000,
+      multiplier: 2,
+      maxDelay:   30000,
+      onRetry: (error, attempt) => {
+        logger.warn(`📡 Webhook retry attempt ${attempt}: ${error.message}`);
+      }
+    }
+  );
 
   logger.info(`✅ Webhook triggered: ${event}`);
 

@@ -1,6 +1,7 @@
 const { Worker } = require('bullmq');
 const { sendInvoiceEmail } = require('../../utils/emailService');
 const { generateInvoicePDF } = require('../../utils/pdfGenerator');
+const { withRetry } = require('../../utils/retryHandler');
 const logger = require('../../utils/logger');
 
 const connection = {
@@ -8,25 +9,35 @@ const connection = {
   port: process.env.REDIS_PORT || 6379,
 };
 
-const emailWorker = new Worker('email', async(job) => {
-    const { invoice } = job.data;
+const emailWorker = new Worker('email', async (job) => {
+  const { invoice } = job.data;
+  logger.info(`📧 Processing email job: ${job.id} for ${invoice.clientEmail}`);
 
-    logger.info(`Processing email job: ${job.id} for ${invoice.clientEmail}`);
+  await withRetry(
+    async () => {
+      const pdfStream = generateInvoicePDF(invoice);
+      await sendInvoiceEmail(invoice, pdfStream);
+    },
+    {
+      retries:    3,
+      delay:      2000,
+      multiplier: 2,
+      onRetry: (error, attempt) => {
+        logger.warn(`📧 Email retry attempt ${attempt}: ${error.message}`);
+      }
+    }
+  );
 
-    const pdfStream = generateInvoicePDF(invoice);
+  logger.info(`✅ Email sent successfully: ${invoice.invoiceNo}`);
 
-    await sendInvoiceEmail(invoice, pdfStream);
+}, { connection });
 
-    logger.info(`Email sent successfully: ${invoice.invoiceNo} `);
+emailWorker.on('completed', (job) => {
+  logger.info(`✅ Email job completed: ${job.id}`);
+});
 
-}, { connection })
-
-emailWorker.on('completed', (job)=>{
-    logger.info(`Email job completed: ${job.id}`);
-})
-
-emailWorker.on('failed', (job,err)=>{
-    logger.error(`Email job failed: ${job.id} -> ${err.message}`);
-})
+emailWorker.on('failed', (job, err) => {
+  logger.error(`❌ Email job failed: ${job.id} → ${err.message}`);
+});
 
 module.exports = emailWorker;
