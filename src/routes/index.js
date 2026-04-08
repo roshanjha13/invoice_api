@@ -8,6 +8,7 @@ const analyticsRoutes = require('../modules/analytics/analytics.routes');
 const paymentRoutes = require('../modules/payment/payment.routes');
 const subscriptionRoutes = require('../modules/subscription/subscription.routes');
 const transactionRoutes  = require('../modules/transaction/transaction.routes');
+const couponRoutes = require('../modules/coupon/coupon.routes');
 
 router.use('/auth', authRoutes);
 router.use('/invoices', invoiceRoutes);
@@ -16,5 +17,6 @@ router.use('/analytics', analyticsRoutes);
 router.use('/payment', paymentRoutes);
 router.use('/subscriptions', subscriptionRoutes);
 router.use('/transactions',  transactionRoutes);
+router.use('/coupons', couponRoutes);
 
 module.exports = router;
