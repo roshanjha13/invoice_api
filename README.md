@@ -7,48 +7,101 @@
 ![Docker](https://img.shields.io/badge/Docker-ready-blue)
 ![License](https://img.shields.io/badge/license-ISC-blue)
 
-A **production-ready SaaS Invoice Generation API** built with Node.js, Express.js, MongoDB, Redis, and BullMQ. Designed for multi-tenant usage with enterprise-grade security, async job processing, and real-time monitoring.
+A **production-ready SaaS Invoice Generation API** built with Node.js, Express.js, MongoDB, Redis, and BullMQ. Designed for multi-tenant usage with enterprise-grade security, async job processing, fault tolerance, and real-time monitoring.
+
+> 🚀 **Live Demo:** [your-app.onrender.com](https://your-app.onrender.com)
+> 📦 **GitHub:** [github.com/roshanjha13/invoice_api](https://github.com/roshanjha13/invoice_api)
 
 ---
 
-## 🚀 Features
+## ✨ Features
 
-- **JWT + Refresh Token** authentication with token blacklisting
-- **OAuth 2.0** Google login via Passport.js
-- **Account Lockout** after 5 failed login attempts
-- **Role-Based Access Control** (Admin / Manager / User)
-- **Advanced GST Engine** — HSN code detection, auto CGST/SGST/IGST calculation
-- **PDF Invoice Generation** using Worker Threads (non-blocking)
-- **Async Job Processing** — BullMQ queues for email, PDF, webhooks
-- **Cluster Mode** — multi-core CPU utilization
-- **Rate Limiting** — 6-layer (Global, Auth, Plan, PDF, Email, IP)
-- **Prometheus Metrics** — HTTP latency, active connections, invoice counters
-- **Audit Logging** — track all user actions
-- **Invoice Analytics** — MongoDB Aggregation Pipeline
-- **CSV/GST Export** — downloadable reports
-- **Swagger API Docs** — interactive documentation
-- **Docker + CI/CD** — GitHub Actions pipeline
+### 🔐 Security & Auth
+- JWT Access + Refresh Token with Redis blacklisting
+- OAuth 2.0 Google login via Passport.js
+- Account lockout after 5 failed attempts
+- Role-Based Access Control (Admin / Manager / User)
+- XSS, NoSQL injection, HPP protection
+- 6-layer rate limiting (Global, Auth, Plan, PDF, Email, IP)
+
+### 🧾 Invoice Management
+- Full CRUD with status tracking (draft → sent → paid)
+- PDF generation using Worker Threads (non-blocking)
+- Email delivery with PDF attachment
+- Webhook support on invoice events
+- Idempotency key support
+
+### 💰 GST Engine
+- HSN code detection with auto GST rate mapping
+- Auto Intra/Inter state detection
+- Item-wise CGST / SGST / IGST calculation
+- India-ready billing compliance
+
+### 💳 Payments
+- Razorpay payment gateway integration
+- Payment verification with signature check
+- Refund flow
+- Webhook handler (payment.captured, payment.failed, refund.created)
+
+### 🔄 Subscriptions
+- Plan management (Free / Starter / Pro / Enterprise)
+- Trial period with auto expiry
+- Monthly/yearly billing cycles
+- Auto plan downgrade on cancellation/expiry
+- Razorpay subscription webhooks
+
+### 🎟️ Coupon System
+- Percentage + Fixed discount types
+- Plan-specific coupons
+- Usage limits + expiry dates
+- Per-user usage tracking
+
+### ⚡ Performance & Reliability
+- Node.js Cluster mode (multi-core utilization)
+- BullMQ job queues (email, PDF, webhook)
+- Worker Threads for CPU-intensive PDF generation
+- Custom Circuit Breaker (Email, Cloudinary, Razorpay, Webhook)
+- Retry Pattern with exponential backoff
+- Graceful shutdown with cleanup
+- Request timeout middleware
+
+### 📊 Analytics & Reporting
+- MongoDB Aggregation Pipeline analytics
+- Monthly revenue trends
+- Top clients report
+- GST summary
+- Payment stats
+- CSV + GST export
+
+### 🔍 Audit & Monitoring
+- Comprehensive audit logging (all user actions)
+- Prometheus custom metrics
+- Winston structured logging
+- Circuit breaker stats endpoint
 
 ---
 
 ## 🏗️ Architecture
-```
 src/
-├── config/          # DB, Redis, Queue, Passport, Swagger, Prometheus
-├── middlewares/     # Auth, Validate, RateLimit, RBAC, Sanitize, Metrics
+├── config/           # DB, Redis, Queue, Passport, Swagger, Prometheus, Razorpay
+├── middlewares/      # Auth, Validate, RateLimit, RBAC, Sanitize, Metrics, Timeout
 ├── modules/
-│   ├── auth/        # Register, Login, OAuth, Refresh Token
-│   ├── invoice/     # CRUD, PDF, Email, GST, Webhooks
-│   ├── admin/       # User management, Plan control
-│   ├── analytics/   # Revenue, GST summary, CSV export
-│   └── audit/       # Action logs
+│   ├── auth/         # Register, Login, OAuth, Refresh Token
+│   ├── invoice/      # CRUD, PDF, Email, GST, Webhooks
+│   ├── payment/      # Razorpay, Verify, Refund, Webhook
+│   ├── subscription/ # Plans, Trial, Billing, Webhook
+│   ├── transaction/  # Transaction logs
+│   ├── coupon/       # Discount codes
+│   ├── admin/        # User management, Plan control
+│   ├── analytics/    # Revenue, GST, CSV export
+│   └── audit/        # Action logs
 ├── queues/
-│   ├── jobs/        # Email, PDF, Webhook job creators
-│   └── workers/     # BullMQ workers
-├── workers/         # Worker Threads (PDF generation)
-├── utils/           # Helpers — GST, PDF, Email, Token, Logger
-└── routes/          # Centralized route registry
-```
+│   ├── jobs/         # Email, PDF, Webhook job creators
+│   └── workers/      # BullMQ workers with retry pattern
+├── workers/          # Worker Threads (PDF generation)
+├── jobs/             # Cron jobs (invoice reset, trial expiry)
+├── utils/            # GST, PDF, Email, Token, Logger, Circuit Breaker, Retry
+└── routes/           # Centralized route registry
 
 ---
 
@@ -56,16 +109,17 @@ src/
 
 | Layer | Technology |
 |-------|-----------|
-| Runtime | Node.js 18 |
+| Runtime | Node.js 18 (Cluster Mode) |
 | Framework | Express.js |
 | Database | MongoDB + Mongoose |
 | Cache | Redis |
 | Queue | BullMQ |
-| Auth | JWT + Passport.js |
+| Auth | JWT + Passport.js (OAuth 2.0) |
 | PDF | PDFKit + Worker Threads |
 | Email | Nodemailer |
 | Storage | Cloudinary |
-| Monitoring | Prometheus + Grafana |
+| Payment | Razorpay |
+| Monitoring | Prometheus + Winston |
 | DevOps | Docker + GitHub Actions |
 
 ---
@@ -96,6 +150,7 @@ docker-compose up -d
 ---
 
 ## 🔑 Environment Variables
+
 ```env
 # Server
 PORT=3000
@@ -130,6 +185,13 @@ SMTP_PASS=your_app_password
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
+
+# Razorpay
+RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxx
+RAZORPAY_KEY_SECRET=xxxxxxxxxxxxxxxxxx
+RAZORPAY_WEBHOOK_SECRET=xxxxxxxxxxxxxxxxxx
+RAZORPAY_PLAN_STARTER=plan_xxxxxxxxxx
+RAZORPAY_PLAN_PRO=plan_xxxxxxxxxx
 ```
 
 ---
@@ -137,106 +199,118 @@ CLOUDINARY_API_SECRET=your_api_secret
 ## 📡 API Endpoints
 
 ### Auth
-```
-POST   /api/v1/auth/register          Register new user
-POST   /api/v1/auth/login             Login
-POST   /api/v1/auth/logout            Logout
-POST   /api/v1/auth/refresh-token     Refresh access token
-GET    /api/v1/auth/google            Google OAuth login
-GET    /api/v1/auth/api-key           Get API key
-POST   /api/v1/auth/api-key/regenerate Regenerate API key
-```
+POST   /api/v1/auth/register              Register
+POST   /api/v1/auth/login                 Login
+POST   /api/v1/auth/logout                Logout
+POST   /api/v1/auth/refresh-token         Refresh token
+GET    /api/v1/auth/google                Google OAuth
+GET    /api/v1/auth/api-key               Get API key
+POST   /api/v1/auth/api-key/regenerate    Regenerate API key
 
 ### Invoices
-```
-POST   /api/v1/invoices               Create invoice
-GET    /api/v1/invoices               Get all invoices
-GET    /api/v1/invoices/:id           Get single invoice
-PATCH  /api/v1/invoices/:id           Update invoice
-DELETE /api/v1/invoices/:id           Delete invoice
-GET    /api/v1/invoices/:id/pdf       Download PDF
-POST   /api/v1/invoices/:id/send      Send via email
-PATCH  /api/v1/invoices/:id/mark-paid Mark as paid
-```
+POST   /api/v1/invoices                   Create invoice
+GET    /api/v1/invoices                   Get all invoices
+GET    /api/v1/invoices/:id               Get invoice
+PATCH  /api/v1/invoices/:id               Update invoice
+DELETE /api/v1/invoices/:id               Delete invoice
+GET    /api/v1/invoices/:id/pdf           Download PDF
+POST   /api/v1/invoices/:id/send          Send via email
+PATCH  /api/v1/invoices/:id/mark-paid     Mark as paid
+
+### Payments
+POST   /api/v1/payments/create-order      Create order
+POST   /api/v1/payments/verify            Verify payment
+POST   /api/v1/payments/webhook           Razorpay webhook
+GET    /api/v1/payments                   Get all payments
+GET    /api/v1/payments/invoice/:id       Get by invoice
+POST   /api/v1/payments/:id/refund        Refund (admin)
+
+### Subscriptions
+POST   /api/v1/subscriptions              Create subscription
+POST   /api/v1/subscriptions/trial        Start trial
+GET    /api/v1/subscriptions              Get all
+GET    /api/v1/subscriptions/current      Current subscription
+PATCH  /api/v1/subscriptions/change-plan  Change plan
+POST   /api/v1/subscriptions/cancel       Cancel
+POST   /api/v1/subscriptions/webhook      Razorpay webhook
+
+### Coupons
+POST   /api/v1/coupons/apply              Apply coupon (check)
+POST   /api/v1/coupons/verify             Verify + use coupon
+POST   /api/v1/coupons                    Create (admin)
+GET    /api/v1/coupons                    Get all (admin)
+PATCH  /api/v1/coupons/:id                Update (admin)
+DELETE /api/v1/coupons/:id                Delete (admin)
+PATCH  /api/v1/coupons/:id/toggle         Toggle active (admin)
 
 ### Analytics
-```
-GET    /api/v1/analytics/stats           Overall stats
-GET    /api/v1/analytics/status          Status wise count
-GET    /api/v1/analytics/monthly-revenue Monthly revenue
-GET    /api/v1/analytics/top-clients     Top clients
-GET    /api/v1/analytics/gst-summary     GST summary
-GET    /api/v1/analytics/export/invoices Export CSV
-GET    /api/v1/analytics/export/gst      Export GST CSV
-```
+GET    /api/v1/analytics/stats            Overall stats
+GET    /api/v1/analytics/status           Status wise
+GET    /api/v1/analytics/monthly-revenue  Monthly revenue
+GET    /api/v1/analytics/top-clients      Top clients
+GET    /api/v1/analytics/gst-summary      GST summary
+GET    /api/v1/analytics/payment-stats    Payment stats
+GET    /api/v1/analytics/export/invoices  Export CSV
+GET    /api/v1/analytics/export/gst       Export GST CSV
+
+### Transactions
+GET    /api/v1/transactions               All transactions
+GET    /api/v1/transactions/stats         Stats
+GET    /api/v1/transactions/monthly       Monthly breakdown
 
 ### Admin
-```
-GET    /api/v1/admin/users                  All users
-PATCH  /api/v1/admin/users/:id/toggle-status Ban/unban user
-PATCH  /api/v1/admin/users/:id/plan         Change plan
-GET    /api/v1/admin/invoices               All invoices
-```
+GET    /api/v1/admin/users                    All users
+PATCH  /api/v1/admin/users/:id/toggle-status  Ban/unban
+PATCH  /api/v1/admin/users/:id/plan           Change plan
+GET    /api/v1/admin/invoices                 All invoices
 
 ### Audit
-```
-GET    /api/v1/audit/my-logs    My audit logs
-GET    /api/v1/audit/all        All logs (admin only)
-```
+GET    /api/v1/audit/my-logs              My logs
+GET    /api/v1/audit/all                  All logs (admin)
+
+### System
+GET    /health                            Health check
+GET    /metrics                           Prometheus metrics
+GET    /circuit-breakers                  Circuit breaker stats
+GET    /api/docs                          Swagger UI
 
 ---
 
 ## 💰 Pricing Tiers
 
-| Plan | Invoices/month | Rate Limit | Price |
-|------|---------------|------------|-------|
-| Free | 50 | 10 req/min | ₹0 |
-| Starter | 500 | 60 req/min | ₹999/mo |
-| Pro | Unlimited | 300 req/min | ₹2,999/mo |
-| Enterprise | Unlimited | 1000 req/min | Custom |
+| Plan | Invoices/month | Rate Limit | Trial | Price |
+|------|---------------|------------|-------|-------|
+| Free | 50 | 10 req/min | — | ₹0 |
+| Starter | 500 | 60 req/min | 14 days | ₹999/mo |
+| Pro | Unlimited | 300 req/min | 14 days | ₹2,999/mo |
+| Enterprise | Unlimited | 1000 req/min | 30 days | Custom |
 
 ---
 
 ## 🧪 Testing
+
 ```bash
 npm test
 ```
 
-Coverage targets:
-- Statements: > 80%
-- Functions: > 80%
-- Lines: > 80%
+---
+
+## ⚡ Fault Tolerance
+
+| Component | Strategy |
+|-----------|---------|
+| Email Service | Circuit Breaker (3 failures → OPEN) + Retry (3x) |
+| Cloudinary | Circuit Breaker (3 failures → OPEN) + Retry (3x) |
+| Razorpay | Circuit Breaker (5 failures → OPEN) |
+| Webhook | Circuit Breaker (5 failures → OPEN) + Retry (5x) |
+| Server | Graceful Shutdown + Request Timeout |
 
 ---
 
 ## 📊 Monitoring
-
-Prometheus metrics available at:
-```
-GET /metrics
-```
-
-Metrics tracked:
-- HTTP request count + duration
-- Active connections
-- Invoice creation counter
-- PDF generation duration
-- Email queue size
-
----
-
-## 🔐 Security
-
-- Helmet.js security headers
-- CORS configuration
-- Rate limiting (6 layers)
-- JWT + Refresh Token
-- Token blacklisting (Redis)
-- Account lockout
-- XSS prevention
-- NoSQL injection prevention
-- HPP protection
-- Request size limiting (10kb)
+GET /metrics          → Prometheus metrics
+GET /circuit-breakers → Circuit breaker stats
+GET /health           → Server + DB status
 
 ---
 
