@@ -2,7 +2,6 @@ const crypto = require('crypto');
 const { createOrder, refundPayment } = require('../../config/razorpay');
 const asyncHandler = require('../../utils/asyncHandler');
 const { success, error } = require('../../utils/response');
-const HTTP = require('../../utils/httpStatus');
 const msg = require('../../config/constant');
 const repo = require('./payment.repository');
 const invoiceRepo = require('../invoice/invoice.repository');
@@ -15,10 +14,10 @@ exports.createPaymentOrder = asyncHandler(async (req, res, next) => {
   const { invoiceId } = req.body;
 
   const invoice = await invoiceRepo.findById(invoiceId, req.user._id);
-  if (!invoice) return next(error(res, msg.INVOICE_NOT_FOUND, HTTP.NOT_FOUND));
+  if (!invoice) return next(error(res, msg.INVOICE_NOT_FOUND, msg.NOT_FOUND_CODE));
 
   if (invoice.status === 'paid') {
-    return next(error(res, msg.INVOICE_ALREADY_PAID, HTTP.BAD_REQUEST));
+    return next(error(res, msg.INVOICE_ALREADY_PAID, msg.BAD_REQUEST));
   }
 
   // ✅ Circuit breaker ke through
@@ -47,7 +46,7 @@ exports.createPaymentOrder = asyncHandler(async (req, res, next) => {
     invoice._id,
     req.user._id,
     payment._id,
-    `https://razorpay.com/payment/${order.id}`
+    `msgs://razorpay.com/payment/${order.id}`
   );
 
   await auditLog(
@@ -64,7 +63,7 @@ exports.createPaymentOrder = asyncHandler(async (req, res, next) => {
     currency:  order.currency,
     paymentId: payment._id,
     keyId:     process.env.RAZORPAY_KEY_ID,
-  }, HTTP.CREATED);
+  }, msg.CREATED);
 });
 
 // Verify Payment
@@ -82,7 +81,7 @@ exports.verifyPayment = asyncHandler(async (req, res, next) => {
       status:        'failed',
       failureReason: 'Invalid signature',
     });
-    return next(error(res, msg.PAYMENT_INVALID_SIGNATURE, HTTP.BAD_REQUEST));
+    return next(error(res, msg.PAYMENT_INVALID_SIGNATURE, msg.BAD_REQUEST));
   }
 
   const payment = await repo.updateByOrderId(razorpayOrderId, {
@@ -127,7 +126,7 @@ exports.handleWebhook = asyncHandler(async (req, res, next) => {
     .digest('hex');
 
   if (expectedSignature !== signature) {
-    return next(error(res, msg.WEBHOOK_INVALID_SIGNATURE, HTTP.BAD_REQUEST));
+    return next(error(res, msg.WEBHOOK_INVALID_SIGNATURE, msg.BAD_REQUEST));
   }
 
   const { event, payload } = req.body;
@@ -172,10 +171,10 @@ exports.handleWebhook = asyncHandler(async (req, res, next) => {
 // Get Payment by Invoice
 exports.getPaymentByInvoice = asyncHandler(async (req, res, next) => {
   const invoice = await invoiceRepo.findById(req.params.invoiceId, req.user._id);
-  if (!invoice) return next(error(res, msg.INVOICE_NOT_FOUND, HTTP.NOT_FOUND));
+  if (!invoice) return next(error(res, msg.INVOICE_NOT_FOUND, msg.NOT_FOUND_CODE));
 
   const payment = await repo.findByInvoiceId(req.params.invoiceId);
-  if (!payment) return next(error(res, msg.PAYMENT_NOT_FOUND, HTTP.NOT_FOUND));
+  if (!payment) return next(error(res, msg.PAYMENT_NOT_FOUND, msg.NOT_FOUND_CODE));
 
   return success(res, { payment });
 });
@@ -192,10 +191,10 @@ exports.refundPayment = asyncHandler(async (req, res, next) => {
   const { reason, amount } = req.body;
 
   const payment = await repo.findById(req.params.id);
-  if (!payment) return next(error(res, msg.PAYMENT_NOT_FOUND, HTTP.NOT_FOUND));
+  if (!payment) return next(error(res, msg.PAYMENT_NOT_FOUND, msg.NOT_FOUND_CODE));
 
   if (payment.status !== 'paid') {
-    return next(error(res, msg.PAYMENT_NOT_REFUNDABLE, HTTP.BAD_REQUEST));
+    return next(error(res, msg.PAYMENT_NOT_REFUNDABLE, msg.BAD_REQUEST));
   }
 
   // ✅ Circuit breaker ke through

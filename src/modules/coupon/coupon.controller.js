@@ -1,6 +1,6 @@
 const asyncHandler = require('../../utils/asyncHandler');
 const { success, error } = require('../../utils/response');
-const HTTP = require('../../utils/httpStatus');
+const msg = require('../../config/constant');
 const repo = require('./coupon.repository');
 const { calculateDiscount, validateCoupon } = require('../../utils/couponHelper');
 const { auditLog, AUDIT_ACTIONS, AUDIT_MODULES } = require('../../utils/auditLogger');
@@ -10,12 +10,12 @@ exports.applyCoupon = asyncHandler(async (req, res, next) => {
   const { code, plan, amount } = req.body;
 
   const coupon = await repo.findByCode(code);
-  if (!coupon) return next(error(res, 'Invalid coupon code', HTTP.NOT_FOUND));
+  if (!coupon) return next(error(res, 'Invalid coupon code', msg.NOT_FOUND_CODE));
 
   // Validate karo
   const validation = validateCoupon(coupon, req.user._id, plan, amount);
   if (!validation.valid) {
-    return next(error(res, validation.message, HTTP.BAD_REQUEST));
+    return next(error(res, validation.message, msg.BAD_REQUEST));
   }
 
   // Discount calculate karo
@@ -36,11 +36,11 @@ exports.verifyCoupon = asyncHandler(async (req, res, next) => {
   const { code, plan, amount } = req.body;
 
   const coupon = await repo.findByCode(code);
-  if (!coupon) return next(error(res, 'Invalid coupon code', HTTP.NOT_FOUND));
+  if (!coupon) return next(error(res, 'Invalid coupon code', msg.NOT_FOUND_CODE));
 
   const validation = validateCoupon(coupon, req.user._id, plan, amount);
   if (!validation.valid) {
-    return next(error(res, validation.message, HTTP.BAD_REQUEST));
+    return next(error(res, validation.message, msg.BAD_REQUEST));
   }
 
   const result = calculateDiscount(coupon, amount);
@@ -71,10 +71,10 @@ exports.verifyCoupon = asyncHandler(async (req, res, next) => {
 // Create Coupon
 exports.createCoupon = asyncHandler(async (req, res, next) => {
   const existing = await repo.findByCode(req.body.code);
-  if (existing) return next(error(res, 'Coupon code already exists', HTTP.CONFLICT));
+  if (existing) return next(error(res, 'Coupon code already exists', msg.CONFLICT));
 
   const coupon = await repo.createCoupon(req.body);
-  return success(res, { coupon }, HTTP.CREATED);
+  return success(res, { coupon }, msg.CREATED);
 });
 
 // Get All Coupons
@@ -87,21 +87,21 @@ exports.getAllCoupons = asyncHandler(async (req, res) => {
 // Update Coupon
 exports.updateCoupon = asyncHandler(async (req, res, next) => {
   const coupon = await repo.updateCoupon(req.params.id, req.body);
-  if (!coupon) return next(error(res, 'Coupon not found', HTTP.NOT_FOUND));
+  if (!coupon) return next(error(res, 'Coupon not found', msg.NOT_FOUND_CODE));
   return success(res, { coupon });
 });
 
 // Delete Coupon
 exports.deleteCoupon = asyncHandler(async (req, res, next) => {
   const coupon = await repo.deleteCoupon(req.params.id);
-  if (!coupon) return next(error(res, 'Coupon not found', HTTP.NOT_FOUND));
+  if (!coupon) return next(error(res, 'Coupon not found', msg.NOT_FOUND_CODE));
   return success(res, { message: 'Coupon deleted successfully' });
 });
 
 // Toggle Active
 exports.toggleCoupon = asyncHandler(async (req, res, next) => {
   const coupon = await repo.findById(req.params.id);
-  if (!coupon) return next(error(res, 'Coupon not found', HTTP.NOT_FOUND));
+  if (!coupon) return next(error(res, 'Coupon not found', msg.NOT_FOUND_CODE));
 
   const updated = await repo.updateCoupon(req.params.id, { isActive: !coupon.isActive });
   return success(res, {

@@ -1,7 +1,6 @@
 const razorpay = require('../../config/razorpay');
 const asyncHandler = require('../../utils/asyncHandler');
 const { success, error } = require('../../utils/response');
-const HTTP = require('../../utils/httpStatus');
 const msg = require('../../config/constant');
 const repo = require('./subscription.repository');
 const userRepo = require('../auth/auth.repository');
@@ -16,19 +15,19 @@ exports.startTrial = asyncHandler(async (req, res, next) => {
   const { plan } = req.body;
 
   if (!isValidPlan(plan) || plan === 'free') {
-    return next(error(res, 'Invalid plan for trial', HTTP.BAD_REQUEST));
+    return next(error(res, 'Invalid plan for trial', msg.BAD_REQUEST));
   }
 
   // Trial already use kiya hai?
   const user = await userRepo.findById(req.user._id);
   if (user.trialUsed) {
-    return next(error(res, msg.TRIAL_ALREADY_USED, HTTP.BAD_REQUEST));
+    return next(error(res, msg.TRIAL_ALREADY_USED, msg.BAD_REQUEST));
   }
 
   // Active subscription check karo
   const existing = await repo.findByUserId(req.user._id);
   if (existing) {
-    return next(error(res, 'Active subscription already exists', HTTP.BAD_REQUEST));
+    return next(error(res, 'Active subscription already exists', msg.BAD_REQUEST));
   }
 
   const planConfig = getPlan(plan);
@@ -76,7 +75,7 @@ exports.startTrial = asyncHandler(async (req, res, next) => {
     plan,
     trialEndAt,
     trialDays:  planConfig.trialDays,
-  }, HTTP.CREATED);
+  }, msg.CREATED);
 });
 
 // Create Subscription
@@ -84,19 +83,19 @@ exports.createSubscription = asyncHandler(async (req, res, next) => {
   const { plan, billingCycle = 'monthly' } = req.body;
 
   if (!isValidPlan(plan) || plan === 'free') {
-    return next(error(res, 'Invalid plan selected', HTTP.BAD_REQUEST));
+    return next(error(res, 'Invalid plan selected', msg.BAD_REQUEST));
   }
 
   const planConfig = getPlan(plan);
 
   if (!planConfig.razorpayPlanId) {
-    return next(error(res, 'Plan not configured', HTTP.BAD_REQUEST));
+    return next(error(res, 'Plan not configured', msg.BAD_REQUEST));
   }
 
   // Existing subscription check karo
   const existing = await repo.findByUserId(req.user._id);
   if (existing && existing.status === 'active') {
-    return next(error(res, 'Active subscription already exists', HTTP.BAD_REQUEST));
+    return next(error(res, 'Active subscription already exists', msg.BAD_REQUEST));
   }
 
   // Razorpay subscription banao
@@ -158,13 +157,13 @@ exports.createSubscription = asyncHandler(async (req, res, next) => {
     billingCycle,
     nextBillingAt,
     keyId:           process.env.RAZORPAY_KEY_ID,
-  }, HTTP.CREATED);
+  }, msg.CREATED);
 });
 
 // Get Current Subscription
 exports.getSubscription = asyncHandler(async (req, res, next) => {
   const subscription = await repo.findByUserId(req.user._id);
-  if (!subscription) return next(error(res, 'No active subscription', HTTP.NOT_FOUND));
+  if (!subscription) return next(error(res, 'No active subscription', msg.NOT_FOUND_CODE));
   return success(res, { subscription });
 });
 
@@ -180,11 +179,11 @@ exports.changePlan = asyncHandler(async (req, res, next) => {
   const { plan } = req.body;
 
   if (!isValidPlan(plan) || plan === 'free') {
-    return next(error(res, 'Invalid plan', HTTP.BAD_REQUEST));
+    return next(error(res, 'Invalid plan', msg.BAD_REQUEST));
   }
 
   const subscription = await repo.findByUserId(req.user._id);
-  if (!subscription) return next(error(res, 'No active subscription', HTTP.NOT_FOUND));
+  if (!subscription) return next(error(res, 'No active subscription', msg.NOT_FOUND_CODE));
 
   const prevPlan = subscription.plan;
   const planConfig = getPlan(plan);
@@ -234,7 +233,7 @@ exports.cancelSubscription = asyncHandler(async (req, res, next) => {
   const { reason } = req.body;
 
   const subscription = await repo.findByUserId(req.user._id);
-  if (!subscription) return next(error(res, 'No active subscription', HTTP.NOT_FOUND));
+  if (!subscription) return next(error(res, 'No active subscription', msg.NOT_FOUND_CODE));
 
   // Razorpay pe cancel karo
   if (subscription.razorpaySubId) {
@@ -285,7 +284,7 @@ exports.handleSubscriptionWebhook = asyncHandler(async (req, res, next) => {
     .digest('hex');
 
   if (expectedSignature !== signature) {
-    return next(error(res, 'Invalid webhook signature', HTTP.BAD_REQUEST));
+    return next(error(res, 'Invalid webhook signature', msg.BAD_REQUEST));
   }
 
   const { event, payload } = req.body;

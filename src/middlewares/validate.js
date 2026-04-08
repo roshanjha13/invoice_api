@@ -1,4 +1,4 @@
-const HTTP = require('../config/constant')
+const msg = require('../config/constant')
 
 
 const validate = (schema) => {
@@ -7,7 +7,7 @@ const validate = (schema) => {
 
         if (error) {
             const errors = error.details.map((err)=>err.message);
-            return res.status(HTTP.BAD_REQUEST).json({
+            return res.status(msg.BAD_REQUEST).json({
                 success: false,
                 errors
             });

@@ -67,10 +67,8 @@ module.exports = {
   BAD_REQUEST:             400,
   UNAUTHORIZED_CODE:       401,
   FORBIDDEN_CODE:          403,
-  NOT_FOUND_CODE:               404,
+  NOT_FOUND_CODE:          404,
   CONFLICT:                409,
   SERVER_ERROR:            500,
   TOO_MANY_REQUESTS:       429,
-
-  
 };

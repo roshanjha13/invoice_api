@@ -1,5 +1,5 @@
 const { error } = require('../utils/response');
-const HTTP = require('../utils/httpStatus');
+const msg = require('../config/constant');
 const logger = require('../utils/logger');
 
 const requestTimeout = (timeout = 30000) => {
@@ -8,7 +8,7 @@ const requestTimeout = (timeout = 30000) => {
       logger.warn(`⏱️ Request timeout: ${req.method} ${req.originalUrl}`);
 
       if (!res.headersSent) {
-        return res.status(HTTP.SERVER_ERROR).json({
+        return res.status(msg.SERVER_ERROR).json({
           success: false,
           message: 'Request timeout — please try again',
         });

@@ -1,5 +1,4 @@
 const { client } = require('../config/redis');
-const HTTP = require('../utils/httpStatus');
 const logger = require('../utils/logger');
 
 const IDEMPOTENCY_TTL = 24 * 60 * 60; // 24 hours
