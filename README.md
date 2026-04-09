@@ -9,7 +9,7 @@
 
 A **production-ready SaaS Invoice Generation API** built with Node.js, Express.js, MongoDB, Redis, and BullMQ. Designed for multi-tenant usage with enterprise-grade security, async job processing, fault tolerance, and real-time monitoring.
 
-> 🚀 **Live Demo:** [your-app.onrender.com](https://your-app.onrender.com)
+<!-- > 🚀 **Live Demo:** [your-app.onrender.com](https://your-app.onrender.com) -->
 > 📦 **GitHub:** [github.com/roshanjha13/invoice_api](https://github.com/roshanjha13/invoice_api)
 
 ---
@@ -345,7 +345,7 @@ GET /health           → Server + DB status
 **Roshan Kumar Jha**
 - GitHub: [@roshanjha13](https://github.com/roshanjha13)
 - Email: jharoshan618@gmail.com
-- LinkedIn: [Roshan Kumar Jha](https://linkedin.com/in/roshanjha)
+- LinkedIn: [Roshan Kumar Jha](https://linkedin.com/in/roshanjha13)
 
 ---
 
