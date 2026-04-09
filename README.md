@@ -82,6 +82,8 @@ A **production-ready SaaS Invoice Generation API** built with Node.js, Express.j
 ---
 
 ## 🏗️ Architecture
+
+```
 src/
 ├── config/           # DB, Redis, Queue, Passport, Swagger, Prometheus, Razorpay
 ├── middlewares/      # Auth, Validate, RateLimit, RBAC, Sanitize, Metrics, Timeout
@@ -102,6 +104,7 @@ src/
 ├── jobs/             # Cron jobs (invoice reset, trial expiry)
 ├── utils/            # GST, PDF, Email, Token, Logger, Circuit Breaker, Retry
 └── routes/           # Centralized route registry
+```
 
 ---
 
@@ -127,7 +130,7 @@ src/
 ## ⚡ Quick Start
 
 ### Prerequisites
-```bash
+```
 Node.js >= 18
 MongoDB >= 6
 Redis >= 6
@@ -138,7 +141,7 @@ Redis >= 6
 git clone https://github.com/roshanjha13/invoice_api.git
 cd invoice_api
 npm install
-cp .env.example .env   # Fill in your values
+cp .env.example .env
 npm run dev
 ```
 
@@ -199,6 +202,7 @@ RAZORPAY_PLAN_PRO=plan_xxxxxxxxxx
 ## 📡 API Endpoints
 
 ### Auth
+```
 POST   /api/v1/auth/register              Register
 POST   /api/v1/auth/login                 Login
 POST   /api/v1/auth/logout                Logout
@@ -206,8 +210,10 @@ POST   /api/v1/auth/refresh-token         Refresh token
 GET    /api/v1/auth/google                Google OAuth
 GET    /api/v1/auth/api-key               Get API key
 POST   /api/v1/auth/api-key/regenerate    Regenerate API key
+```
 
 ### Invoices
+```
 POST   /api/v1/invoices                   Create invoice
 GET    /api/v1/invoices                   Get all invoices
 GET    /api/v1/invoices/:id               Get invoice
@@ -216,16 +222,20 @@ DELETE /api/v1/invoices/:id               Delete invoice
 GET    /api/v1/invoices/:id/pdf           Download PDF
 POST   /api/v1/invoices/:id/send          Send via email
 PATCH  /api/v1/invoices/:id/mark-paid     Mark as paid
+```
 
 ### Payments
+```
 POST   /api/v1/payments/create-order      Create order
 POST   /api/v1/payments/verify            Verify payment
 POST   /api/v1/payments/webhook           Razorpay webhook
 GET    /api/v1/payments                   Get all payments
 GET    /api/v1/payments/invoice/:id       Get by invoice
 POST   /api/v1/payments/:id/refund        Refund (admin)
+```
 
 ### Subscriptions
+```
 POST   /api/v1/subscriptions              Create subscription
 POST   /api/v1/subscriptions/trial        Start trial
 GET    /api/v1/subscriptions              Get all
@@ -233,8 +243,10 @@ GET    /api/v1/subscriptions/current      Current subscription
 PATCH  /api/v1/subscriptions/change-plan  Change plan
 POST   /api/v1/subscriptions/cancel       Cancel
 POST   /api/v1/subscriptions/webhook      Razorpay webhook
+```
 
 ### Coupons
+```
 POST   /api/v1/coupons/apply              Apply coupon (check)
 POST   /api/v1/coupons/verify             Verify + use coupon
 POST   /api/v1/coupons                    Create (admin)
@@ -242,8 +254,10 @@ GET    /api/v1/coupons                    Get all (admin)
 PATCH  /api/v1/coupons/:id                Update (admin)
 DELETE /api/v1/coupons/:id                Delete (admin)
 PATCH  /api/v1/coupons/:id/toggle         Toggle active (admin)
+```
 
 ### Analytics
+```
 GET    /api/v1/analytics/stats            Overall stats
 GET    /api/v1/analytics/status           Status wise
 GET    /api/v1/analytics/monthly-revenue  Monthly revenue
@@ -252,27 +266,36 @@ GET    /api/v1/analytics/gst-summary      GST summary
 GET    /api/v1/analytics/payment-stats    Payment stats
 GET    /api/v1/analytics/export/invoices  Export CSV
 GET    /api/v1/analytics/export/gst       Export GST CSV
+```
 
 ### Transactions
+```
 GET    /api/v1/transactions               All transactions
 GET    /api/v1/transactions/stats         Stats
 GET    /api/v1/transactions/monthly       Monthly breakdown
+```
 
 ### Admin
+```
 GET    /api/v1/admin/users                    All users
 PATCH  /api/v1/admin/users/:id/toggle-status  Ban/unban
 PATCH  /api/v1/admin/users/:id/plan           Change plan
 GET    /api/v1/admin/invoices                 All invoices
+```
 
 ### Audit
+```
 GET    /api/v1/audit/my-logs              My logs
 GET    /api/v1/audit/all                  All logs (admin)
+```
 
 ### System
+```
 GET    /health                            Health check
 GET    /metrics                           Prometheus metrics
 GET    /circuit-breakers                  Circuit breaker stats
 GET    /api/docs                          Swagger UI
+```
 
 ---
 
@@ -308,9 +331,12 @@ npm test
 ---
 
 ## 📊 Monitoring
+
+```
 GET /metrics          → Prometheus metrics
 GET /circuit-breakers → Circuit breaker stats
 GET /health           → Server + DB status
+```
 
 ---
 
