@@ -1,3 +1,4 @@
+require('dotenv').config();
 const Razorpay = require('razorpay');
 const { razorpayBreaker } = require('../utils/circuitBreaker');
 const logger = require('../utils/logger');
@@ -30,7 +31,7 @@ const updateSubscription = async (subscriptionId, options) => {
   return razorpayBreaker.fire(() => razorpay.subscriptions.update(subscriptionId, options));
 };
 
-logger.info('✅ Razorpay initialized');
+logger.info('Razorpay initialized');
 
 module.exports = {
   razorpay,

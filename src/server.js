@@ -40,7 +40,14 @@ validateEnv();
 app.use(helmetConfig);
 app.use(compression())
 app.use(corsConfig);
-app.use(mongoSanitize());
+
+app.use((req, res, next) => {
+  if (req.body) {
+    req.body = mongoSanitize.sanitize(req.body);
+  }
+  next();
+});
+
 app.use(xssSanitizer);
 app.use(hpp());
 app.use(morgan('dev'));
@@ -91,7 +98,7 @@ startTrialExpiryJob();
 connectDB()
     .then(async ()=>{
         await connectRedis()
-        app.listen(process.env.PORT || 3000, () => {
+        const server = app.listen(process.env.PORT || 3000, () => {
             console.log(`Server is running on Port ${process.env.PORT || 3000}`);
         });
 

@@ -3,7 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 
 const couponSchema = new mongoose.Schema({
   _id:          { type: String, default: () => `coup_${uuidv4().replace(/-/g, '')}` },
-  code:         { type: String, required: true, unique: true, uppercase: true, trim: true },
+  code:         { type: String, required: true, uppercase: true, trim: true },
   description:  { type: String },
 
   // Discount type
